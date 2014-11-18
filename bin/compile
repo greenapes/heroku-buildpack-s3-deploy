@@ -58,7 +58,7 @@ echo "       saved in BUILD_DIR/$(basename ${RELEASE_FILENAME})"
 echo ${RELEASE} > ${RELEASE_FILENAME}
 
 S3_URL=s3://${DEPLOY_BUCKET}/${RELEASE}/
-$S3CMD put --recursive -q -P  ${STATIC_ASSETS}/ ${S3_URL}
+$S3CMD put --recursive -q -P "--add-header=Cache-Control: max-age=31536000" ${STATIC_ASSETS}/ ${S3_URL}
 echo "-----> assets copied to: ${S3_URL}"
 rm -rf ${STATIC_ASSETS}
 echo "-----> static assets removed from the slug"
