@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+BUILD_DIR=$1
+CACHE_DIR=$2
+ENV_DIR=$3
+
+echo "-------- debug"
+ls /
+env
+echo "-------- debug"
+
+echo $0
+echo "-------- debug"
+
+git_head() {
+    (
+        cd ${GIT_DIR}
+        git rev-parse HEAD
+    )
+}
+
+git_describe() {
+    (
+        cd ${GIT_DIR}
+        git describe
+    )
+}
+
+setting() {
+    cat ${ENV_DIR}/$1
+}
+
+DEBUG=$(setting "DEBUG")
+if [[ ${DEBUG} == "1" ]]; then
+    echo "-----> getting head commit"
+    HASH=$(git_head)
+else
+    echo "-----> describing head commit"
+    HASH=$(git_describe)
+fi
+echo "-----> release name: ${HASH}"
+
+DEPLOY_KEY=$(setting "DEPLOY_BIGFOOT_BUCKET_KEY")
+DEPLOY_SECRET=$(setting "DEPLOY_BIGFOOT_SECRET_KEY")
