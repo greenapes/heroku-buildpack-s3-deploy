@@ -5,41 +5,60 @@ BUILD_DIR=$1
 CACHE_DIR=$2
 ENV_DIR=$3
 
-echo "-------- debug"
-ls /
-env
-echo "-------- debug"
-
-echo $0
-echo "-------- debug"
-
-git_head() {
-    (
-        cd ${GIT_DIR}
-        git rev-parse HEAD
-    )
-}
-
-git_describe() {
-    (
-        cd ${GIT_DIR}
-        git describe
-    )
-}
-
 setting() {
     cat ${ENV_DIR}/$1
 }
 
+# STATIC_ASSETS, what to put on S3
+STATIC_ASSETS=${BUILD_DIR}/dist
+# This file will contain the release name
+RELEASE_FILENAME=${BUILD_DIR}/release
+# The S3 BUCKET
+DEPLOY_BUCKET=$(setting "DEPLOY_S3_BUCKET")
+
+staging_release_name() {
+    echo "s_$(date +%Y-%m-%d)_$(dd if=/dev/urandom bs=1 count=1024 2>/dev/null | md5sum -b | cut -d " " -f 1)"
+}
+
+unpack_s3() {
+    (
+        TMP=${CACHE_DIR}/s3cmd
+        rm -rf ${TMP}
+        mkdir ${TMP}
+        cd ${TMP}
+        tar -xf ${S3CMD_ARCHIVE}
+        find ${TMP} -name s3cmd -type f
+    )
+}
+
+BUILDPACK_ROOT=$(dirname $(dirname $0))
+VENDOR=${BUILDPACK_ROOT}/vendor
+
+DEPLOY_KEY=$(setting "DEPLOY_S3_KEY")
+DEPLOY_SECRET=$(setting "DEPLOY_S3_SECRET")
+
+S3CMD_ARCHIVE=${VENDOR}/s3cmd.tar.gz
+S3CFG=${VENDOR}/s3cfg
+S3CMD="python $(unpack_s3) --config=${S3CFG}"
+echo "-----> $($S3CMD --version)"
+S3CMD="${S3CMD} --access_key=${DEPLOY_KEY} --secret_key=${DEPLOY_SECRET}"
+
 DEBUG=$(setting "DEBUG")
 if [[ ${DEBUG} == "1" ]]; then
-    echo "-----> getting head commit"
-    HASH=$(git_head)
+    echo "-----> this is a debug release"
+    RELEASE=$(staging_release_name)
 else
-    echo "-----> describing head commit"
-    HASH=$(git_describe)
+    echo "-----> this is a production release"
+#    echo "-----> describing head commit"
+#    HASH=$(git_describe)
+    RELEASE=r1
 fi
-echo "-----> release name: ${HASH}"
+echo "-----> release name: ${RELEASE}"
+echo "       saved in BUILD_DIR/$(basename ${RELEASE_FILENAME})"
+echo ${RELEASE} > ${RELEASE_FILENAME}
 
-DEPLOY_KEY=$(setting "DEPLOY_BIGFOOT_BUCKET_KEY")
-DEPLOY_SECRET=$(setting "DEPLOY_BIGFOOT_SECRET_KEY")
+S3_URL=s3://${DEPLOY_BUCKET}/${RELEASE}/
+$S3CMD put --recursive -q -P  ${STATIC_ASSETS}/ ${S3_URL}
+echo "-----> assets copied to: ${S3_URL}"
+rm -rf ${STATIC_ASSETS}
+echo "-----> static assets removed from the slug"
