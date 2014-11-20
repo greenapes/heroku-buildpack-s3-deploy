@@ -17,7 +17,7 @@ RELEASE_FILENAME=${BUILD_DIR}/release
 DEPLOY_BUCKET=$(setting "DEPLOY_S3_BUCKET")
 
 staging_release_name() {
-    echo "s_$(date +%Y-%m-%d)_$(dd if=/dev/urandom bs=1 count=1024 2>/dev/null | md5sum -b | cut -d " " -f 1)"
+    echo "s_$(date +%Y-%m-%d_%H%M%S)_$(dd if=/dev/urandom bs=1 count=1024 2>/dev/null | md5sum -b | cut -d " " -f 1)"
 }
 
 unpack_s3() {
