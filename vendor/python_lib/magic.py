@@ -81,9 +81,15 @@ class Magic:
         if not os.path.exists(filename):
             raise IOError("File does not exist: " + filename)
         try:
-            return magic_file(self.cookie, filename)
+            t = magic_file(self.cookie, filename)
         except MagicException as e:
             return self._handle509Bug(e)
+        if t == 'text/plain':
+            import mimetypes
+            mtype, _ = mimetypes.guess_type(filename)
+            if mtype:
+                return mtype
+        return t
 
     def _handle509Bug(self, e):
         # libmagic 5.09 has a bug where it might fail to identify the
