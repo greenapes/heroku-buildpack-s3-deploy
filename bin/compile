@@ -20,6 +20,10 @@ staging_release_name() {
     echo "s_$(date +%Y-%m-%d_%H%M%S)_$(dd if=/dev/urandom bs=1 count=1024 2>/dev/null | md5sum -b | cut -d " " -f 1)"
 }
 
+release_name() {
+    echo "r_$(date +%Y-%m-%d_%H%M%S)_$(dd if=/dev/urandom bs=1 count=1024 2>/dev/null | md5sum -b | cut -d " " -f 1)"
+}
+
 unpack_s3() {
     (
         TMP=${CACHE_DIR}/s3cmd
@@ -52,9 +56,7 @@ if [[ ${DEBUG} == "1" ]]; then
     RELEASE=$(staging_release_name)
 else
     echo "-----> this is a production release"
-#    echo "-----> describing head commit"
-#    HASH=$(git_describe)
-    RELEASE=r1
+    RELEASE=$(release_name)
 fi
 echo "-----> release name: ${RELEASE}"
 echo "       saved in BUILD_DIR/$(basename ${RELEASE_FILENAME})"
