@@ -84,7 +84,11 @@ class Magic:
             t = magic_file(self.cookie, filename)
         except MagicException as e:
             return self._handle509Bug(e)
-        if t == 'text/plain':
+        if t == 'application/octet-stream':
+            _, ext = os.path.splitext(filename)
+            if ext == '.woff':
+                return 'application/font-woff'
+        elif t == 'text/plain':
             import mimetypes
             mtype, _ = mimetypes.guess_type(filename)
             if mtype:
