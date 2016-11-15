@@ -44,6 +44,10 @@ DEPLOY_SECRET=$(setting "DEPLOY_S3_SECRET")
 PYTHON_LIB=${VENDOR}/python_lib
 export PYTHONPATH=${PYTHON_LIB}:${PYTHONPATH:=""}
 
+# PYTHONHOME is set but the directory does not exist; this cause the infamous
+# ImportError: "No module named site"
+unset PYTHONHOME
+
 S3CMD_ARCHIVE=${VENDOR}/s3cmd.tar.gz
 S3CFG=${VENDOR}/s3cfg
 S3CMD="python $(unpack_s3) --config=${S3CFG}"
